@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>RunCrew</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F1F5F4}
+input,textarea{width:100%;padding:9px 12px;border:1px solid #D1D5DB;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#111;outline:none;transition:border 0.15s}
+input:focus,textarea:focus{border-color:#0F766E;box-shadow:0 0 0 3px rgba(15,118,110,0.1)}
+button{font-family:inherit;cursor:pointer}
+.btn-main{width:100%;background:#0F766E;color:white;border:none;border-radius:8px;padding:12px;font-size:15px;font-weight:500;transition:background 0.15s}
+.btn-main:hover{background:#0D6860}
+.btn-main:disabled{background:#E5E7EB;color:#9CA3AF;cursor:default}
+.tab-btn{flex:1;padding:11px 6px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:13px;font-weight:400;color:#6B7280;font-family:inherit;transition:all 0.15s}
+.tab-btn.active{border-bottom-color:#0F766E;color:#0F766E;font-weight:500}
+#app{height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;background:#F1F5F4}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1F2937;color:white;padding:10px 18px;border-radius:10px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+const SUPA_URL="https://xuxwqmjvgxzpdwumxzrp.supabase.co";
+const SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1eHdxbWp2Z3h6cGR3dW14enJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MjYzODMsImV4cCI6MjA5MDMwMjM4M30.PJQxMREH663toOuXEMMOQ21HDpsO_brt6EQCz-D5OH4";
+const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
+
+const ACC="#0F766E";
+const COLORS=["#0F766E","#2563EB","#9333EA","#D97706","#DC2626","#0891B2","#65A30D","#DB2777"];
+function userColor(name){let h=0;for(let c of name)h=(h*31+c.charCodeAt(0))%COLORS.length;return COLORS[h];}
+
+const today=new Date();today.setHours(0,0,0,0);
+function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
+function fmtISO(d){return d.toISOString().split("T")[0];}
+function fmtLong(d){return new Date(d+"T12:00:00").toLocaleDateString("fr-CA",{weekday:"long",day:"numeric",month:"long"});}
+function fmtShort(d){return d.toLocaleDateString("fr-CA",{weekday:"short",day:"numeric"});}
+
+let state={
+  view:"login",user:null,runs:[],tab:"week",weekOffset:0,
+  form:{date:"",time:"",location:"",desc:""},
+  modal:null,loading:false
+};
+
+function toast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg;t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),2500);
+}
+
+async function loadRuns(){
+  const{data,error}=await sb.from("runs").select("*").order("date").order("time");
+  if(!error)state.runs=data||[];
+}
+
+async function addRun(run){
+  const{data,error}=await sb.from("runs").insert([run]).select();
+  if(error){toast("Erreur lors de l'ajout.");return false;}
+  state.runs.push(data[0]);
+  return true;
+}
+
+async function deleteRun(id){
+  const{error}=await sb.from("runs").delete().eq("id",id);
+  if(error){toast("Erreur lors de la suppression.");return false;}
+  state.runs=state.runs.filter(r=>r.id!==id);
+  return true;
+}
+
+function render(){
+  const app=document.getElementById("app");
+  if(state.view==="login"){app.innerHTML=loginHTML();bindLogin();}
+  else if(state.view==="form"){app.innerHTML=shell(formHTML());bindForm();}
+  else{app.innerHTML=shell(state.tab==="week"?weekHTML():listHTML());bindApp();}
+}
+
+function loginHTML(){
+  return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem">
+  <div style="width:100%;max-width:360px;background:#fff;border-radius:16px;border:1px solid #E5E7EB;padding:2rem;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+    <div style="text-align:center;margin-bottom:2rem">
+      <div style="width:54px;height:54px;background:#0F172A;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.5"/><path d="M5 20l4.5-5 2.5 2 3-6 4 9"/><path d="M3 10c2-3 4-4 9-4s8 1 9 4"/></svg>
+      </div>
+      <h1 style="font-size:22px;font-weight:600;color:#111">RunCrew</h1>
+      <p style="font-size:13px;color:#6B7280;margin-top:4px">L'agenda de course de ton groupe</p>
+    </div>
+    <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Ton prénom</label>
+    <input id="ln" placeholder="ex. Marie" style="margin-bottom:12px"/>
+    <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">
+      Numéro WhatsApp / SMS
+      <span style="font-size:11px;color:#9CA3AF;margin-left:6px;font-weight:400">optionnel</span>
+    </label>
+    <input id="lp" type="tel" placeholder="514 000 0000" style="margin-bottom:6px"/>
+    <p style="font-size:11px;color:#9CA3AF;margin-bottom:20px">Permet à tes amis de te contacter pour rejoindre tes sorties.</p>
+    <button id="lbtn" class="btn-main" disabled>Accéder à l'agenda</button>
+  </div>
+</div>`;
+}
+
+function bindLogin(){
+  const n=document.getElementById("ln"),b=document.getElementById("lbtn");
+  n.addEventListener("input",()=>{b.disabled=!n.value.trim();});
+  b.addEventListener("click",async()=>{
+    if(!n.value.trim())return;
+    b.disabled=true;b.textContent="Chargement...";
+    state.user={name:n.value.trim(),phone:document.getElementById("lp").value.trim()};
+    await loadRuns();
+    state.view="main";render();
+  });
+  n.addEventListener("keydown",e=>{if(e.key==="Enter"&&n.value.trim())b.click();});
+}
+
+function shell(content){
+  return`
+  <div style="background:#0F172A;padding:13px 1.25rem;flex-shrink:0">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="color:white;font-weight:600;font-size:17px">RunCrew</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="color:#94A3B8;font-size:13px">${state.user?state.user.name:""}</span>
+        <button id="logout" style="font-size:12px;color:#64748B;background:none;border:none;cursor:pointer;padding:0">Changer</button>
+      </div>
+    </div>
+  </div>
+  ${state.view!=="form"?`<div style="background:#fff;border-bottom:1px solid #E5E7EB;flex-shrink:0"><div style="display:flex">
+    <button class="tab-btn ${state.tab==="week"?"active":""}" data-tab="week">Semaine</button>
+    <button class="tab-btn ${state.tab==="list"?"active":""}" data-tab="list">Liste</button>
+  </div></div>`:""}
+  <div style="flex:1;overflow-y:auto">${content}</div>
+  ${state.view!=="form"?`<div style="padding:1rem;background:#fff;border-top:1px solid #E5E7EB;flex-shrink:0">
+    <button id="addbtn" class="btn-main">+ Planifier une sortie</button>
+  </div>`:""}
+  ${state.modal?modalHTML():""}`;
+}
+
+function weekHTML(){
+  const weekStart=addDays(today,state.weekOffset*7);
+  const days=Array.from({length:7},(_,i)=>addDays(weekStart,i));
+  const label=`${fmtShort(days[0])} – ${fmtShort(days[6])}`;
+  const cols=days.map(d=>{
+    const iso=fmtISO(d);
+    const dayRuns=state.runs.filter(r=>r.date===iso).sort((a,b)=>a.time.localeCompare(b.time));
+    const isToday=iso===fmtISO(today);
+    const isPast=d<today;
+    const cards=dayRuns.map(r=>{
+      const col=userColor(r.creator_name);
+      return`<div data-runid="${r.id}" style="background:${col}18;border-left:3px solid ${col};border-radius:0 6px 6px 0;padding:5px 6px;margin-bottom:4px;cursor:pointer">
+        <div style="font-size:10px;font-weight:600;color:${col}">${r.time}</div>
+        <div style="font-size:10px;color:#111;line-height:1.3;margin-top:1px">${r.creator_name}</div>
+        ${r.location?`<div style="font-size:9px;color:#6B7280;margin-top:1px">${r.location}</div>`:""}
+      </div>`;
+    }).join("");
+    return`<div style="flex:1;min-width:0;border-right:1px solid #F3F4F6;padding:0 3px 8px">
+      <div style="padding:8px 2px 6px;text-align:center;border-bottom:1px solid #F3F4F6;margin-bottom:5px">
+        <div style="font-size:9px;color:${isPast?"#D1D5DB":"#9CA3AF"};text-transform:uppercase;letter-spacing:.5px">${d.toLocaleDateString("fr-CA",{weekday:"short"})}</div>
+        <div style="width:24px;height:24px;border-radius:50%;background:${isToday?"#0F766E":"transparent"};display:flex;align-items:center;justify-content:center;margin:3px auto 0">
+          <span style="font-size:12px;font-weight:${isToday?600:400};color:${isToday?"#fff":isPast?"#D1D5DB":"#111"}">${d.getDate()}</span>
+        </div>
+      </div>
+      ${cards}
+    </div>`;
+  }).join("");
+
+  const runners=[...new Set(state.runs.map(r=>r.creator_name))];
+  return`<div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 1rem;background:#fff;border-bottom:1px solid #E5E7EB;sticky:top 0">
+    <button id="prev" style="background:none;border:1px solid #E5E7EB;border-radius:6px;padding:4px 10px;font-size:16px;cursor:pointer;color:#374151">‹</button>
+    <span style="font-size:13px;font-weight:500;color:#111;text-transform:capitalize">${label}</span>
+    <button id="next" style="background:none;border:1px solid #E5E7EB;border-radius:6px;padding:4px 10px;font-size:16px;cursor:pointer;color:#374151">›</button>
+  </div>
+  <div style="display:flex;background:#fff;overflow:hidden">${cols}</div>
+  ${runners.length?`<div style="padding:.75rem 1rem;display:flex;gap:10px;flex-wrap:wrap;border-top:1px solid #F3F4F6;background:#fff">
+    ${runners.map(name=>`<span style="display:flex;align-items:center;gap:5px;font-size:12px;color:#6B7280">
+      <span style="width:8px;height:8px;border-radius:50%;background:${userColor(name)};display:inline-block;flex-shrink:0"></span>${name}
+    </span>`).join("")}
+  </div>`:""}
+  </div>`;
+}
+
+function listHTML(){
+  const upcoming=state.runs.filter(r=>new Date(r.date+"T23:59:00")>=today).sort((a,b)=>new Date(a.date+"T"+a.time)-new Date(b.date+"T"+b.time));
+  if(!upcoming.length)return`<div style="text-align:center;padding:3rem 1rem;color:#9CA3AF">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 12px;opacity:0.4"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <p style="font-size:14px">Aucune sortie à venir.</p></div>`;
+  return`<div style="padding:1rem">${upcoming.map(r=>{
+    const col=userColor(r.creator_name);
+    return`<div data-runid="${r.id}" style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:1rem 1.25rem;margin-bottom:10px;border-left:3px solid ${col};cursor:pointer">
+      <div style="font-size:13px;color:${col};font-weight:600;text-transform:capitalize;margin-bottom:4px">${fmtLong(r.date)} · ${r.time}${r.location?" · "+r.location:""}</div>
+      <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#111">${r.description}</p>
+      <span style="font-size:13px;color:#6B7280">Par <strong style="font-weight:500;color:#111">${r.creator_name}</strong></span>
+    </div>`;
+  }).join("")}</div>`;
+}
+
+function modalHTML(){
+  const r=state.modal;
+  const col=userColor(r.creator_name);
+  const own=r.creator_name===state.user.name;
+  const phone=r.creator_phone;
+  const action=own
+    ?`<button id="mdel" style="font-size:13px;color:#DC2626;background:none;border:none;cursor:pointer;padding:0">Retirer cette sortie</button>`
+    :phone
+      ?`<div style="display:flex;gap:8px">
+          <button id="mwa" style="background:#25D366;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;font-weight:500">WhatsApp</button>
+          <button id="msms" style="background:#F3F4F6;color:#111;border:1px solid #E5E7EB;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer">SMS</button>
+        </div>`
+      :`<span style="font-size:12px;color:#9CA3AF">Pas de contact renseigné</span>`;
+  return`<div id="moverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;z-index:100">
+  <div style="width:100%;max-width:480px;background:#fff;border-radius:16px 16px 0 0;padding:1.5rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <span style="font-size:12px;font-weight:600;color:${col};background:${col}18;padding:4px 12px;border-radius:20px">${r.time} · ${fmtLong(r.date)}</span>
+      <button id="mclose" style="background:none;border:none;font-size:24px;cursor:pointer;color:#6B7280;line-height:1;padding:0">×</button>
+    </div>
+    ${r.location?`<div style="font-size:13px;color:#6B7280;margin-bottom:10px">📍 ${r.location}</div>`:""}
+    <p style="font-size:15px;line-height:1.65;color:#111;margin-bottom:16px">${r.description}</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid #F3F4F6">
+      <span style="font-size:14px;color:#6B7280">Par <strong style="font-weight:500;color:#111">${r.creator_name}</strong></span>
+      ${action}
+    </div>
+  </div>
+</div>`;
+}
+
+function formHTML(){
+  const f=state.form;
+  const todayISO=fmtISO(today);
+  const ok=f.date&&f.time&&f.desc;
+  return`<div style="padding:1.5rem">
+    <h2 style="font-size:18px;font-weight:600;color:#111;margin-bottom:1.25rem">Planifier une sortie</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div><label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Date</label><input id="fdate" type="date" min="${todayISO}" value="${f.date}"/></div>
+      <div><label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Heure</label><input id="ftime" type="time" value="${f.time}"/></div>
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Lieu <span style="font-size:11px;color:#9CA3AF;font-weight:400">optionnel</span></label>
+      <input id="floc" type="text" placeholder="Mont-Royal, Canal Lachine..." value="${f.location}"/>
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Description</label>
+      <textarea id="fdesc" rows="3" placeholder="Distance, rythme, niveau... ce que tes amis ont besoin de savoir" style="resize:vertical">${f.desc}</textarea>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button id="fcancel" style="flex:1;background:none;border:1px solid #E5E7EB;border-radius:8px;padding:11px;font-size:15px;color:#374151">Annuler</button>
+      <button id="fadd" class="btn-main" style="flex:2" ${ok?"":"disabled"}>Ajouter</button>
+    </div>
+  </div>`;
+}
+
+function bindApp(){
+  document.getElementById("logout").onclick=()=>{state.user=null;state.view="login";render();};
+  const ab=document.getElementById("addbtn");if(ab)ab.onclick=()=>{state.view="form";render();};
+  document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;render();});
+  const prev=document.getElementById("prev"),next=document.getElementById("next");
+  if(prev)prev.onclick=()=>{state.weekOffset--;render();};
+  if(next)next.onclick=()=>{state.weekOffset++;render();};
+  document.querySelectorAll("[data-runid]").forEach(b=>b.onclick=()=>{
+    state.modal=state.runs.find(r=>r.id==b.dataset.runid);render();
+  });
+  const mo=document.getElementById("moverlay");
+  if(mo)mo.onclick=(e)=>{if(e.target===mo){state.modal=null;render();}};
+  const mc=document.getElementById("mclose");if(mc)mc.onclick=()=>{state.modal=null;render();};
+  const mdel=document.getElementById("mdel");
+  if(mdel)mdel.onclick=async()=>{
+    const id=state.modal.id;state.modal=null;
+    const ok=await deleteRun(id);
+    if(ok)toast("Sortie retirée.");
+    render();
+  };
+  const mwa=document.getElementById("mwa");
+  if(mwa)mwa.onclick=()=>{
+    const r=state.modal;
+    const n=r.creator_phone.replace(/\D/g,"");
+    const msg=encodeURIComponent(`Salut ${r.creator_name} ! Je voudrais me joindre à ta sortie du ${fmtLong(r.date)} à ${r.time}. C'est encore possible ?`);
+    window.open(`https://wa.me/${n.startsWith("1")?n:"1"+n}?text=${msg}`,"_blank");
+  };
+  const msms=document.getElementById("msms");
+  if(msms)msms.onclick=()=>{
+    const r=state.modal;
+    const msg=encodeURIComponent(`Salut ${r.creator_name} ! Je voudrais me joindre à ta sortie du ${fmtLong(r.date)} à ${r.time}. C'est encore possible ?`);
+    window.open(`sms:+1${r.creator_phone.replace(/\D/g,"")}?body=${msg}`);
+  };
+}
+
+function bindForm(){
+  document.getElementById("logout").onclick=()=>{state.user=null;state.view="login";render();};
+  const upd=()=>{
+    state.form={date:document.getElementById("fdate").value,time:document.getElementById("ftime").value,location:document.getElementById("floc").value,desc:document.getElementById("fdesc").value};
+    document.getElementById("fadd").disabled=!(state.form.date&&state.form.time&&state.form.desc);
+  };
+  ["fdate","ftime","floc","fdesc"].forEach(id=>document.getElementById(id).addEventListener("input",upd));
+  document.getElementById("fcancel").onclick=()=>{state.view="main";render();};
+  document.getElementById("fadd").onclick=async()=>{
+    const f=state.form;
+    if(!f.date||!f.time||!f.desc)return;
+    const btn=document.getElementById("fadd");
+    btn.disabled=true;btn.textContent="Ajout en cours...";
+    const ok=await addRun({
+      creator_name:state.user.name,
+      creator_phone:state.user.phone||null,
+      date:f.date,time:f.time,
+      location:f.location||null,
+      description:f.desc
+    });
+    if(ok){
+      state.form={date:"",time:"",location:"",desc:""};
+      state.view="main";state.tab="week";
+      toast("Sortie ajoutée !");
+    }
+    render();
+  };
+}
+
+render();
+</script>
+</body>
+</html>
