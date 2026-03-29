@@ -1,0 +1,15 @@
+export const S = {
+  view: "login",
+  user: null,
+  groups: [],
+  activeGroup: null,
+  runs: [],
+  allMembers: [],
+  tab: "week",
+  weekOffset: 0,
+  appTab: "agenda",
+  form: { date: "", time: "", location: "", desc: "" },
+  modal: null,
+  showForm: false,
+  authMode: "signin",
+};
