@@ -25,7 +25,7 @@ export function vGroups() {
           <span style="color:white;font-weight:600;font-size:17px">RunCrew</span>
           <div style="display:flex;align-items:center;gap:10px">
             <span style="color:#94A3B8;font-size:13px">${S.user.name}</span>
-            <button id="logout" style="font-size:12px;color:#64748B;background:none;border:none;cursor:pointer">Changer</button>
+            <button id="logout" style="font-size:12px;color:#64748B;background:none;border:none;cursor:pointer">Log out</button>
           </div>
         </div>
       </div>
