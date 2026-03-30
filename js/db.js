@@ -1,8 +1,6 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import { S } from "./state.js";
-
-const SURL = "https://xuxwqmjvgxzpdwumxzrp.supabase.co";
-const SKEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1eHdxbWp2Z3h6cGR3dW14enJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MjYzODMsImV4cCI6MjA5MDMwMjM4M30.PJQxMREH663toOuXEMMOQ21HDpsO_brt6EQCz-D5OH4";
+import { SURL, SKEY } from "./config.js";
 
 export const sb = createClient(SURL, SKEY);
 
