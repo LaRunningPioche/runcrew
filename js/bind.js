@@ -92,7 +92,7 @@ function bindGroups() {
     btn.disabled = true;
     btn.innerHTML = `<span class="spinner"></span>Création...`;
     const code = genCode();
-    const { error } = await sb.from("groups").insert([{ name: nm, code, creator_name: S.user.name }]);
+    const { error } = await sb.from("groups").insert([{ name: nm, code, creator_id: S.user.id, creator_name: S.user.name }]);
     if (error) {
       toast("Erreur.");
       btn.disabled = false;
@@ -121,20 +121,20 @@ function bindGroups() {
         return;
       }
       const grp = gs[0];
-      if (grp.creator_name === S.user.name) {
+      if (grp.creator_id === S.user.id) {
         toast("Tu es le créateur de ce groupe.");
         ja.disabled = false;
         ja.textContent = "Envoyer ma demande";
         return;
       }
-      const { data: ex } = await sb.from("memberships").select("id").eq("group_id", grp.id).eq("member_name", S.user.name);
+      const { data: ex } = await sb.from("memberships").select("id").eq("group_id", grp.id).eq("member_id", S.user.id);
       if (ex && ex.length) {
         toast("Demande déjà envoyée pour ce groupe.");
         ja.disabled = false;
         ja.textContent = "Envoyer ma demande";
         return;
       }
-      await sb.from("memberships").insert([{ group_id: grp.id, member_name: S.user.name, member_phone: S.user.phone || null, status: "pending" }]);
+      await sb.from("memberships").insert([{ group_id: grp.id, member_id: S.user.id, member_name: S.user.name, member_phone: S.user.phone || null, status: "pending" }]);
       await loadGroups();
       S.view = "pending";
       r();
@@ -198,6 +198,7 @@ function bindMain() {
       btn.innerHTML = `<span class="spinner"></span>Ajout...`;
       const { data, error } = await sb.from("runs").insert([{
         group_id: S.activeGroup.id,
+        creator_id: S.user.id,
         creator_name: S.user.name,
         creator_phone: S.user.phone || null,
         date: f.date,

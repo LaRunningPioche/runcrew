@@ -8,8 +8,8 @@ export const sb = createClient(SURL, SKEY);
 
 export async function loadGroups() {
   const [{ data: created }, { data: memberships }] = await Promise.all([
-    sb.from("groups").select("*").eq("creator_name", S.user.name),
-    sb.from("memberships").select("*,group:groups(*)").eq("member_name", S.user.name),
+    sb.from("groups").select("*").eq("creator_id", S.user.id),
+    sb.from("memberships").select("*,group:groups(*)").eq("member_id", S.user.id),
   ]);
   const result = [];
   (created || []).forEach(g => result.push({ group: g, membership: null, isCreator: true }));
