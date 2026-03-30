@@ -21,6 +21,7 @@ update public.groups g
   set creator_id = p.id
   from public.profiles p
   where p.name = g.creator_name and g.creator_id is null;
+delete from public.groups where creator_id is null;
 alter table public.groups alter column creator_id set not null;
 
 -- Add member_id to memberships, backfill from profiles
@@ -29,6 +30,7 @@ update public.memberships m
   set member_id = p.id
   from public.profiles p
   where p.name = m.member_name and m.member_id is null;
+delete from public.memberships where member_id is null;
 alter table public.memberships alter column member_id set not null;
 
 -- Add creator_id to runs, backfill from profiles
@@ -37,6 +39,7 @@ update public.runs r
   set creator_id = p.id
   from public.profiles p
   where p.name = r.creator_name and r.creator_id is null;
+delete from public.runs where creator_id is null;
 alter table public.runs alter column creator_id set not null;
 
 -- Replace permissive policies on groups with proper RLS
