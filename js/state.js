@@ -1,5 +1,6 @@
 export const S = {
   view: "login",
+  authReady: false,
   user: null,
   groups: [],
   activeGroup: null,

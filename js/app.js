@@ -19,5 +19,10 @@ sb.auth.onAuthStateChange(async (event, session) => {
     S.groups = [];
     S.view = "login";
   }
+  S.authReady = true;
   r();
 });
+
+setTimeout(() => {
+  if (!S.authReady) r();
+}, 3000);
