@@ -46,11 +46,17 @@ function bindAuth() {
       toast("Vérifie ta boîte mail pour confirmer ton compte.");
       lb.textContent = "Email envoyé";
     } else {
-      const { error } = await sb.auth.signInWithPassword({ email, password: pwd });
-      if (error) {
-        toast("Erreur: " + error.message);
+      const timeout = setTimeout(() => {
         lb.disabled = false;
         lb.textContent = "Se connecter";
+        toast("Connexion lente, réessaie.");
+      }, 8000);
+      const { error } = await sb.auth.signInWithPassword({ email, password: pwd });
+      clearTimeout(timeout);
+      if (error) {
+        lb.disabled = false;
+        lb.textContent = "Se connecter";
+        toast("Erreur: " + error.message);
       }
     }
   });

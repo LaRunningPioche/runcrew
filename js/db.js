@@ -2,7 +2,9 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 import { S } from "./state.js";
 import { SURL, SKEY } from "./config.js";
 
-export const sb = createClient(SURL, SKEY);
+export const sb = createClient(SURL, SKEY, {
+  auth: { lock: async (_name, _timeout, fn) => await fn() },
+});
 
 export async function loadGroups() {
   const [{ data: created }, { data: memberships }] = await Promise.all([
