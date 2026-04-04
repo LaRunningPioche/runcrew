@@ -9,7 +9,7 @@ export const S = {
   tab: "week",
   weekOffset: 0,
   appTab: "agenda",
-  form: { date: "", time: "", location: "", desc: "" },
+  form: { date: "", time: "", location: "", distance: "", desc: "" },
   modal: null,
   showForm: false,
   authMode: "signin",

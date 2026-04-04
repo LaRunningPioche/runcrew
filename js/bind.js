@@ -191,11 +191,12 @@ function bindMain() {
         date: document.getElementById("fdate").value,
         time: document.getElementById("ftime").value,
         location: document.getElementById("floc").value,
+        distance: document.getElementById("fdist").value,
         desc: document.getElementById("fdesc").value,
       };
       document.getElementById("fadd").disabled = !(S.form.date && S.form.time && S.form.desc);
     };
-    ["fdate", "ftime", "floc", "fdesc"].forEach(id => document.getElementById(id).addEventListener("input", syncForm));
+    ["fdate", "ftime", "floc", "fdist", "fdesc"].forEach(id => document.getElementById(id).addEventListener("input", syncForm));
     document.getElementById("fadd").addEventListener("click", async () => {
       const f = S.form;
       if (!f.date || !f.time || !f.desc) return;
@@ -210,6 +211,7 @@ function bindMain() {
         date: f.date,
         time: f.time,
         location: f.location || null,
+        distance_km: f.distance ? parseFloat(f.distance) : null,
         description: f.desc,
       }]).select().single();
       if (error) {
@@ -219,7 +221,7 @@ function bindMain() {
         return;
       }
       S.runs.push(data);
-      S.form = { date: "", time: "", location: "", desc: "" };
+      S.form = { date: "", time: "", location: "", distance: "", desc: "" };
       S.showForm = false;
       S.tab = "week";
       toast("Sortie ajoutée !");
