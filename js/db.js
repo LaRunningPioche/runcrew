@@ -25,4 +25,11 @@ export async function loadGroupData() {
   ]);
   S.runs = runs || [];
   S.allMembers = members || [];
+  const runIds = S.runs.map(r => r.id);
+  if (runIds.length) {
+    const { data: participations } = await sb.from("run_participations").select("*").in("run_id", runIds);
+    S.participations = participations || [];
+  } else {
+    S.participations = [];
+  }
 }
