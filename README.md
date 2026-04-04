@@ -48,3 +48,5 @@ Set these environment variables in your Vercel project settings:
 | `SUPABASE_ANON_KEY` | Your Supabase anon key |
 
 Then connect the repo to Vercel — `vercel.json` handles the build and security headers.
+
+Hello World
