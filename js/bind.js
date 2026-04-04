@@ -111,22 +111,80 @@ function bindGroups() {
     r();
   });
 
+  // Recherche par nom
+  const gs = document.getElementById("gsearch");
+  if (gs) {
+    const ja = document.getElementById("btnjoina");
+    const dd = document.getElementById("gdropdown");
+    let debounce;
+
+    gs.addEventListener("input", () => {
+      S.joinSelected = null;
+      ja.disabled = true;
+      const q = gs.value.trim();
+      clearTimeout(debounce);
+      if (q.length < 2) { dd.innerHTML = ""; return; }
+      debounce = setTimeout(async () => {
+        const { data } = await sb.from("groups").select("id,name,code,creator_id").ilike("name", `%${q}%`).limit(8);
+        if (!data || !data.length) {
+          dd.innerHTML = `<div style="padding:10px 12px;font-size:13px;color:#9CA3AF">Aucun groupe trouvé</div>`;
+          return;
+        }
+        dd.innerHTML = data.map(g => `
+          <div data-gresult="${g.id}" style="padding:10px 12px;font-size:14px;cursor:pointer;border-bottom:1px solid #F3F4F6;color:#111;background:#fff">
+            ${g.name}
+          </div>
+        `).join("");
+        dd.querySelectorAll("[data-gresult]").forEach(el => {
+          el.addEventListener("mouseover", () => { el.style.background = "#F9FAFB"; });
+          el.addEventListener("mouseout", () => { el.style.background = "#fff"; });
+          el.addEventListener("click", () => {
+            S.joinSelected = data.find(g => g.id === el.dataset.gresult);
+            dd.innerHTML = "";
+            ja.disabled = false;
+            r();
+          });
+        });
+      }, 300);
+    });
+
+    document.getElementById("gclear")?.addEventListener("click", () => {
+      S.joinSelected = null;
+      ja.disabled = true;
+      r();
+    });
+  }
+
+  // Entrée par code
   const gc = document.getElementById("gcode");
   if (gc) {
     const ja = document.getElementById("btnjoina");
-    gc.addEventListener("input", () => { gc.value = gc.value.toUpperCase(); ja.disabled = gc.value.trim().length < 3; });
+    gc.addEventListener("input", () => {
+      gc.value = gc.value.toUpperCase();
+      if (!S.joinSelected) ja.disabled = gc.value.trim().length < 3;
+    });
+  }
+
+  // Bouton envoyer
+  const ja = document.getElementById("btnjoina");
+  if (ja) {
     ja.addEventListener("click", async () => {
-      const code = gc.value.trim();
       ja.disabled = true;
       ja.innerHTML = `<span class="spinner"></span>Envoi...`;
-      const { data: gs } = await sb.from("groups").select("*").eq("code", code);
-      if (!gs || !gs.length) {
-        toast("Code introuvable.");
-        ja.disabled = false;
-        ja.textContent = "Envoyer ma demande";
-        return;
+
+      let grp = S.joinSelected;
+      if (!grp) {
+        const code = document.getElementById("gcode")?.value.trim();
+        const { data: gs } = await sb.from("groups").select("*").eq("code", code);
+        if (!gs || !gs.length) {
+          toast("Code introuvable.");
+          ja.disabled = false;
+          ja.textContent = "Envoyer ma demande";
+          return;
+        }
+        grp = gs[0];
       }
-      const grp = gs[0];
+
       if (grp.creator_id === S.user.id) {
         toast("Tu es le créateur de ce groupe.");
         ja.disabled = false;
@@ -141,6 +199,7 @@ function bindGroups() {
         return;
       }
       await sb.from("memberships").insert([{ group_id: grp.id, member_id: S.user.id, member_name: S.user.name, member_phone: S.user.phone || null, status: "pending" }]);
+      S.joinSelected = null;
       await loadGroups();
       S.view = "pending";
       r();
