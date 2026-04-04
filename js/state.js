@@ -5,6 +5,7 @@ export const S = {
   groups: [],
   activeGroup: null,
   runs: [],
+  participations: [],
   allMembers: [],
   tab: "week",
   weekOffset: 0,

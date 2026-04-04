@@ -62,11 +62,13 @@ function vWeek() {
         </div>
         ${dr.map(x => {
           const c = uColor(x.creator_name);
+          const pCount = S.participations.filter(p => p.run_id === x.id).length;
           return `
             <div data-runid="${x.id}" style="background:${c}18;border-left:3px solid ${c};border-radius:0 6px 6px 0;padding:5px 6px;margin-bottom:4px;cursor:pointer">
               <div style="font-size:10px;font-weight:600;color:${c}">${x.time}</div>
               <div style="font-size:10px;color:#111;line-height:1.3;margin-top:1px">${x.creator_name}</div>
               ${x.location ? `<div style="font-size:9px;color:#6B7280">${x.location}</div>` : ""}
+              ${pCount ? `<div style="font-size:9px;color:#6B7280;margin-top:2px">👟 ${pCount}</div>` : ""}
             </div>
           `;
         }).join("")}
@@ -106,7 +108,14 @@ function vList() {
           <div data-runid="${x.id}" class="card" style="border-left:3px solid ${c};cursor:pointer">
             <div style="font-size:13px;color:${c};font-weight:600;text-transform:capitalize;margin-bottom:4px">${fmtL(x.date)} · ${x.time}${x.location ? " · " + x.location : ""}${x.distance_km ? " · " + x.distance_km + " km" : ""}</div>
             <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#111">${x.description}</p>
-            <span style="font-size:13px;color:#6B7280">Par <strong style="font-weight:500;color:#111">${x.creator_name}</strong></span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${S.participations.filter(p => p.run_id === x.id).length ? "8px" : "0"}">
+              <span style="font-size:13px;color:#6B7280">Par <strong style="font-weight:500;color:#111">${x.creator_name}</strong></span>
+            </div>
+            ${(() => {
+              const participants = S.participations.filter(p => p.run_id === x.id);
+              if (!participants.length) return "";
+              return `<div style="display:flex;flex-wrap:wrap;gap:6px">${participants.map(p => `<span style="font-size:12px;background:#F3F4F6;color:#374151;padding:3px 8px;border-radius:20px">👟 ${p.user_name}</span>`).join("")}</div>`;
+            })()}
           </div>
         `;
       }).join("")}
@@ -181,6 +190,18 @@ export function vModal() {
           ${x.distance_km ? `<div style="font-size:13px;color:#6B7280">🏃 ${x.distance_km} km</div>` : ""}
         </div>
         <p style="font-size:15px;line-height:1.65;color:#111;margin-bottom:16px">${x.description}</p>
+        ${(() => {
+          const participants = S.participations.filter(p => p.run_id === x.id);
+          const isParticipating = participants.some(p => p.user_id === S.user.id);
+          return `
+            <div style="margin-bottom:14px">
+              ${participants.length ? `<div style="font-size:12px;color:#6B7280;margin-bottom:8px">👟 ${participants.map(p => p.user_name).join(", ")}</div>` : ""}
+              <button id="${isParticipating ? "munparticipate" : "mparticipate"}" style="width:100%;padding:10px;border-radius:8px;border:1px solid ${isParticipating ? "#E5E7EB" : "#0F766E"};background:${isParticipating ? "#F9FAFB" : "#0F766E"};color:${isParticipating ? "#6B7280" : "white"};font-size:14px;font-weight:500;font-family:inherit;cursor:pointer">
+                ${isParticipating ? "Ne plus participer" : "Participer"}
+              </button>
+            </div>
+          `;
+        })()}
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid #F3F4F6">
           <span style="font-size:14px;color:#6B7280">Par <strong style="font-weight:500;color:#111">${x.creator_name}</strong></span>
           ${action}

@@ -161,6 +161,14 @@ function bindMain() {
 
   document.getElementById("moverlay")?.addEventListener("click", e => { if (e.target.id === "moverlay") { S.modal = null; r(); } });
   document.getElementById("mclose")?.addEventListener("click", () => { S.modal = null; r(); });
+  document.getElementById("mparticipate")?.addEventListener("click", async () => {
+    const { data, error } = await sb.from("run_participations").insert([{ run_id: S.modal.id, user_id: S.user.id, user_name: S.user.name }]).select().single();
+    if (!error) { S.participations.push(data); r(); }
+  });
+  document.getElementById("munparticipate")?.addEventListener("click", async () => {
+    const { error } = await sb.from("run_participations").delete().eq("run_id", S.modal.id).eq("user_id", S.user.id);
+    if (!error) { S.participations = S.participations.filter(p => !(p.run_id === S.modal.id && p.user_id === S.user.id)); r(); }
+  });
   document.getElementById("mdel")?.addEventListener("click", async () => {
     const id = S.modal.id;
     S.modal = null;
