@@ -104,7 +104,7 @@ function vList() {
         const c = uColor(x.creator_name);
         return `
           <div data-runid="${x.id}" class="card" style="border-left:3px solid ${c};cursor:pointer">
-            <div style="font-size:13px;color:${c};font-weight:600;text-transform:capitalize;margin-bottom:4px">${fmtL(x.date)} · ${x.time}${x.location ? " · " + x.location : ""}</div>
+            <div style="font-size:13px;color:${c};font-weight:600;text-transform:capitalize;margin-bottom:4px">${fmtL(x.date)} · ${x.time}${x.location ? " · " + x.location : ""}${x.distance_km ? " · " + x.distance_km + " km" : ""}</div>
             <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#111">${x.description}</p>
             <span style="font-size:13px;color:#6B7280">Par <strong style="font-weight:500;color:#111">${x.creator_name}</strong></span>
           </div>
@@ -176,7 +176,10 @@ export function vModal() {
           <span style="font-size:12px;font-weight:600;color:${c};background:${c}18;padding:4px 12px;border-radius:20px">${x.time} · ${fmtL(x.date)}</span>
           <button id="mclose" style="background:none;border:none;font-size:24px;cursor:pointer;color:#6B7280;line-height:1;padding:0">×</button>
         </div>
-        ${x.location ? `<div style="font-size:13px;color:#6B7280;margin-bottom:10px">📍 ${x.location}</div>` : ""}
+        <div style="display:flex;gap:12px;margin-bottom:10px">
+          ${x.location ? `<div style="font-size:13px;color:#6B7280">📍 ${x.location}</div>` : ""}
+          ${x.distance_km ? `<div style="font-size:13px;color:#6B7280">🏃 ${x.distance_km} km</div>` : ""}
+        </div>
         <p style="font-size:15px;line-height:1.65;color:#111;margin-bottom:16px">${x.description}</p>
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid #F3F4F6">
           <span style="font-size:14px;color:#6B7280">Par <strong style="font-weight:500;color:#111">${x.creator_name}</strong></span>
@@ -208,15 +211,23 @@ export function vForm() {
             <input id="ftime" type="time" value="${f.time}"/>
           </div>
         </div>
-        <div style="margin-bottom:12px">
-          <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">
-            Lieu <span style="font-size:11px;color:#9CA3AF;font-weight:400">optionnel</span>
-          </label>
-          <input id="floc" type="text" placeholder="Mont-Royal, Canal Lachine..." value="${f.location}"/>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div>
+            <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">
+              Lieu <span style="font-size:11px;color:#9CA3AF;font-weight:400">optionnel</span>
+            </label>
+            <input id="floc" type="text" placeholder="Mont-Royal, Canal Lachine..." value="${f.location}"/>
+          </div>
+          <div>
+            <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">
+              Distance <span style="font-size:11px;color:#9CA3AF;font-weight:400">km · optionnel</span>
+            </label>
+            <input id="fdist" type="number" min="0" step="0.5" placeholder="10" value="${f.distance}" style="width:100%;box-sizing:border-box"/>
+          </div>
         </div>
         <div style="margin-bottom:20px">
           <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Description</label>
-          <textarea id="fdesc" rows="3" placeholder="Distance, rythme, niveau..." style="resize:vertical">${f.desc}</textarea>
+          <textarea id="fdesc" rows="3" placeholder="Rythme, niveau, point de rendez-vous..." style="resize:vertical">${f.desc}</textarea>
         </div>
         <button id="fadd" class="btn" ${ok ? "" : "disabled"}>Ajouter à l'agenda</button>
       </div>
