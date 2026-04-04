@@ -12,5 +12,6 @@ export const S = {
   form: { date: "", time: "", location: "", distance: "", desc: "" },
   modal: null,
   showForm: false,
+  joinSelected: null,
   authMode: "signin",
 };
