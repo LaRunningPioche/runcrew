@@ -255,15 +255,34 @@ function bindMain() {
   if (fdesc) {
     const syncForm = () => {
       S.form = {
+        ...S.form,
         date: document.getElementById("fdate").value,
         time: document.getElementById("ftime").value,
         location: document.getElementById("floc").value,
         distance: document.getElementById("fdist").value,
+        duration: document.getElementById("fduration").value,
+        elevation: document.getElementById("felevation").value,
+        run_type: document.getElementById("fruntype").value,
         desc: document.getElementById("fdesc").value,
       };
       document.getElementById("fadd").disabled = !(S.form.date && S.form.time && S.form.desc);
     };
-    ["fdate", "ftime", "floc", "fdist", "fdesc"].forEach(id => document.getElementById(id).addEventListener("input", syncForm));
+    ["fdate", "ftime", "floc", "fdist", "fduration", "felevation", "fruntype", "fdesc"].forEach(id => document.getElementById(id)?.addEventListener("input", syncForm));
+    document.getElementById("fruntype")?.addEventListener("change", syncForm);
+
+    document.querySelectorAll("[data-ftoggle]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const key = btn.dataset.ftoggle;
+        const val = btn.dataset.ftoggleval;
+        if (key === "flexible") {
+          S.form.flexible = val === "true";
+        } else {
+          S.form[key] = S.form[key] === val ? "" : val;
+        }
+        r();
+      });
+    });
+
     document.getElementById("fadd").addEventListener("click", async () => {
       const f = S.form;
       if (!f.date || !f.time || !f.desc) return;
@@ -279,6 +298,11 @@ function bindMain() {
         time: f.time,
         location: f.location || null,
         distance_km: f.distance ? parseFloat(f.distance) : null,
+        duration: f.duration || null,
+        elevation_gain: f.elevation ? parseInt(f.elevation) : null,
+        run_type: f.run_type || null,
+        terrain: f.terrain || null,
+        schedule_flexible: f.flexible,
         description: f.desc,
       }]).select().single();
       if (error) {
@@ -288,7 +312,7 @@ function bindMain() {
         return;
       }
       S.runs.push(data);
-      S.form = { date: "", time: "", location: "", distance: "", desc: "" };
+      S.form = { date: "", time: "", location: "", distance: "", duration: "", elevation: "", run_type: "", terrain: "", flexible: false, desc: "" };
       S.showForm = false;
       S.tab = "week";
       toast("Sortie ajoutée !");

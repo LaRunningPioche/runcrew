@@ -185,9 +185,14 @@ export function vModal() {
           <span style="font-size:12px;font-weight:600;color:${c};background:${c}18;padding:4px 12px;border-radius:20px">${x.time} · ${fmtL(x.date)}</span>
           <button id="mclose" style="background:none;border:none;font-size:24px;cursor:pointer;color:#6B7280;line-height:1;padding:0">×</button>
         </div>
-        <div style="display:flex;gap:12px;margin-bottom:10px">
-          ${x.location ? `<div style="font-size:13px;color:#6B7280">📍 ${x.location}</div>` : ""}
-          ${x.distance_km ? `<div style="font-size:13px;color:#6B7280">🏃 ${x.distance_km} km</div>` : ""}
+        ${x.location ? `<div style="font-size:13px;color:#6B7280;margin-bottom:8px">📍 ${x.location}</div>` : ""}
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:${x.distance_km || x.duration || x.elevation_gain || x.run_type || x.terrain ? "12px" : "0"}">
+          ${x.distance_km ? `<span style="font-size:12px;background:#F3F4F6;color:#374151;padding:3px 8px;border-radius:20px">📏 ${x.distance_km} km</span>` : ""}
+          ${x.duration ? `<span style="font-size:12px;background:#F3F4F6;color:#374151;padding:3px 8px;border-radius:20px">⏱ ${x.duration}</span>` : ""}
+          ${x.elevation_gain ? `<span style="font-size:12px;background:#F3F4F6;color:#374151;padding:3px 8px;border-radius:20px">⛰ +${x.elevation_gain} m</span>` : ""}
+          ${x.run_type ? `<span style="font-size:12px;background:#EDE9FE;color:#5B21B6;padding:3px 8px;border-radius:20px">${x.run_type}</span>` : ""}
+          ${x.terrain ? `<span style="font-size:12px;background:#FEF3C7;color:#92400E;padding:3px 8px;border-radius:20px">${x.terrain}</span>` : ""}
+          ${x.schedule_flexible ? `<span style="font-size:12px;background:#DBEAFE;color:#1E40AF;padding:3px 8px;border-radius:20px">Horaire flexible</span>` : ""}
         </div>
         <p style="font-size:15px;line-height:1.65;color:#111;margin-bottom:16px">${x.description}</p>
         ${(() => {
@@ -215,42 +220,82 @@ export function vForm() {
   const f = S.form;
   const minDate = iso(today);
   const ok = f.date && f.time && f.desc;
+  const opt = `<span style="font-size:11px;color:#9CA3AF;font-weight:400">optionnel</span>`;
+  const toggleBtn = (id, val, active, label) =>
+    `<button data-ftoggle="${id}" data-ftoggleval="${val}" style="flex:1;padding:8px 4px;border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer;border:1px solid ${active ? "#0F766E" : "#E5E7EB"};background:${active ? "#F0FDF4" : "#fff"};color:${active ? "#0F766E" : "#6B7280"};font-weight:${active ? "600" : "400"}">${label}</button>`;
   return `
     <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;z-index:100">
-      <div style="width:100%;max-width:480px;background:#fff;border-radius:16px 16px 0 0;padding:1.5rem">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <div style="width:100%;max-width:480px;background:#fff;border-radius:16px 16px 0 0;max-height:92vh;display:flex;flex-direction:column">
+        <div style="padding:1.25rem 1.5rem 1rem;border-bottom:1px solid #F3F4F6;flex-shrink:0;display:flex;justify-content:space-between;align-items:center">
           <h2 style="font-size:18px;font-weight:600;color:#111">Planifier une sortie</h2>
           <button id="fclose" style="background:none;border:none;font-size:24px;cursor:pointer;color:#6B7280;line-height:1;padding:0">×</button>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-          <div>
-            <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Date</label>
-            <input id="fdate" type="date" min="${minDate}" value="${f.date}"/>
+        <div style="padding:1.25rem 1.5rem;overflow-y:auto;flex:1">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div>
+              <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Date</label>
+              <input id="fdate" type="date" min="${minDate}" value="${f.date}"/>
+            </div>
+            <div>
+              <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Heure</label>
+              <input id="ftime" type="time" value="${f.time}"/>
+            </div>
           </div>
-          <div>
-            <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Heure</label>
-            <input id="ftime" type="time" value="${f.time}"/>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-          <div>
-            <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">
-              Lieu <span style="font-size:11px;color:#9CA3AF;font-weight:400">optionnel</span>
-            </label>
+          <div style="margin-bottom:12px">
+            <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Lieu ${opt}</label>
             <input id="floc" type="text" placeholder="Mont-Royal, Canal Lachine..." value="${f.location}"/>
           </div>
-          <div>
-            <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">
-              Distance <span style="font-size:11px;color:#9CA3AF;font-weight:400">km · optionnel</span>
-            </label>
-            <input id="fdist" type="number" min="0" step="0.5" placeholder="10" value="${f.distance}" style="width:100%;box-sizing:border-box"/>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div>
+              <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Distance ${opt} <span style="color:#9CA3AF;font-size:11px">km</span></label>
+              <input id="fdist" type="number" min="0" step="0.5" placeholder="10" value="${f.distance}"/>
+            </div>
+            <div>
+              <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Durée ${opt}</label>
+              <input id="fduration" type="text" placeholder="1h30" value="${f.duration}"/>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div>
+              <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Dénivelé ${opt} <span style="color:#9CA3AF;font-size:11px">m</span></label>
+              <input id="felevation" type="number" min="0" step="10" placeholder="200" value="${f.elevation}"/>
+            </div>
+            <div>
+              <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Type de sortie ${opt}</label>
+              <select id="fruntype" style="width:100%;padding:9px 12px;border:1px solid #D1D5DB;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:${f.run_type ? "#111" : "#9CA3AF"}">
+                <option value="" ${!f.run_type ? "selected" : ""} style="color:#9CA3AF">-- Choisir --</option>
+                <option value="Sortie longue" ${f.run_type === "Sortie longue" ? "selected" : ""}>Sortie longue</option>
+                <option value="EF" ${f.run_type === "EF" ? "selected" : ""}>EF</option>
+                <option value="Fractionné court" ${f.run_type === "Fractionné court" ? "selected" : ""}>Fractionné court</option>
+                <option value="Fractionné long" ${f.run_type === "Fractionné long" ? "selected" : ""}>Fractionné long</option>
+                <option value="Fractionné en côte" ${f.run_type === "Fractionné en côte" ? "selected" : ""}>Fractionné en côte</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div>
+              <label style="font-size:13px;color:#374151;display:block;margin-bottom:6px;font-weight:500">Terrain ${opt}</label>
+              <div style="display:flex;gap:6px">
+                ${toggleBtn("terrain", "Trail", f.terrain === "Trail", "🏔 Trail")}
+                ${toggleBtn("terrain", "Route", f.terrain === "Route", "🛣 Route")}
+              </div>
+            </div>
+            <div>
+              <label style="font-size:13px;color:#374151;display:block;margin-bottom:6px;font-weight:500">Horaire ${opt}</label>
+              <div style="display:flex;gap:6px">
+                ${toggleBtn("flexible", "true", f.flexible, "Flexible")}
+                ${toggleBtn("flexible", "false", !f.flexible, "Fixe")}
+              </div>
+            </div>
+          </div>
+          <div style="margin-bottom:20px">
+            <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Description</label>
+            <textarea id="fdesc" rows="3" placeholder="Rythme, niveau, point de rendez-vous..." style="resize:vertical">${f.desc}</textarea>
           </div>
         </div>
-        <div style="margin-bottom:20px">
-          <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Description</label>
-          <textarea id="fdesc" rows="3" placeholder="Rythme, niveau, point de rendez-vous..." style="resize:vertical">${f.desc}</textarea>
+        <div style="padding:1rem 1.5rem;border-top:1px solid #F3F4F6;flex-shrink:0">
+          <button id="fadd" class="btn" ${ok ? "" : "disabled"}>Ajouter à l'agenda</button>
         </div>
-        <button id="fadd" class="btn" ${ok ? "" : "disabled"}>Ajouter à l'agenda</button>
       </div>
     </div>
   `;

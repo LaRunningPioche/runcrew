@@ -10,7 +10,7 @@ export const S = {
   tab: "week",
   weekOffset: 0,
   appTab: "agenda",
-  form: { date: "", time: "", location: "", distance: "", desc: "" },
+  form: { date: "", time: "", location: "", distance: "", duration: "", elevation: "", run_type: "", terrain: "", flexible: false, desc: "" },
   modal: null,
   showForm: false,
   joinSelected: null,
