@@ -14,6 +14,9 @@ export function vLogin() {
           <h1 style="font-size:22px;font-weight:600;color:#111">RunCrew</h1>
           <p style="font-size:13px;color:#6B7280;margin-top:4px">L'agenda de course de ton groupe</p>
         </div>
+        <p style="font-size:13px;color:#6B7280;text-align:center;line-height:1.6;margin-bottom:1.5rem;padding:0 0.25rem">
+          Planifie tes runs avec tes potes. Lance un groupe, propose des sorties, et cours ensemble — sans la multitude de messages à droite à gauche pour savoir si ton pote ou ton collègue est dispo pour t'accompagner dans tes bêtises de 4 x 5' @ 3:35 / km.
+        </p>
         ${isSignup ? `
           <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Ton prénom</label>
           <input id="ln" placeholder="ex. Marie" style="margin-bottom:12px"/>
