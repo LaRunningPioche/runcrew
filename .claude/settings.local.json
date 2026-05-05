@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -i \"trigger\\\\|function\\\\|procedure\" /c/Users/p.pelletier/Documents/Runcrew/runcrew/supabase/migrations/*.sql)"
+    ]
+  }
+}
