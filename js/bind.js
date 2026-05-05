@@ -1,6 +1,7 @@
 import { S } from "./state.js";
-import { sb, loadGroups, loadGroupData } from "./db.js";
+import { sb, loadGroups, loadGroupData, updateNotifyRuns } from "./db.js";
 import { genCode, fmtL, toast } from "./utils.js";
+import { SURL } from "./config.js"; // utilisé pour sendBeacon
 import { r } from "./router.js";
 
 export function bind() {
@@ -64,6 +65,11 @@ function bindAuth() {
 
 function bindGroups() {
   document.getElementById("logout")?.addEventListener("click", () => sb.auth.signOut());
+
+  document.getElementById("btn-notif")?.addEventListener("click", async () => {
+    await updateNotifyRuns(!S.user.notify_runs);
+    r();
+  });
 
   document.getElementById("btnback")?.addEventListener("click", async () => {
     if (["join", "create", "pending"].includes(S.view)) {
@@ -317,6 +323,11 @@ function bindMain() {
       S.tab = "week";
       toast("Sortie ajoutée !");
       r();
+      // Notifie les membres (sendBeacon ne se fait jamais couper par le navigateur)
+      navigator.sendBeacon(
+        `${SURL}/functions/v1/notify-run-created`,
+        new Blob([JSON.stringify({ run: data, groupName: S.activeGroup.name })], { type: "application/json" })
+      );
     });
   }
 
