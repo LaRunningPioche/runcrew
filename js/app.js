@@ -9,11 +9,16 @@ sb.auth.onAuthStateChange((event, session) => {
       id: session.user.id,
       name: meta?.name || session.user.email,
       phone: meta?.phone || null,
+      notify_runs: true,
     };
     if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
       S.view = "groups";
       S.authReady = true;
-      loadGroups().then(() => r());
+      loadGroups().then(async () => {
+        const { data: profile } = await sb.from("profiles").select("notify_runs").eq("id", session.user.id).single();
+        if (profile) S.user.notify_runs = profile.notify_runs ?? true;
+        r();
+      });
       return;
     }
   } else {

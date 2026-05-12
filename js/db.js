@@ -17,6 +17,11 @@ export async function loadGroups() {
   S.groups = result;
 }
 
+export async function updateNotifyRuns(value) {
+  await sb.from("profiles").update({ notify_runs: value }).eq("id", S.user.id);
+  S.user.notify_runs = value;
+}
+
 export async function loadGroupData() {
   const gid = S.activeGroup.id;
   const [{ data: runs }, { data: members }] = await Promise.all([
