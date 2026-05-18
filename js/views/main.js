@@ -171,7 +171,10 @@ export function vModal() {
   const c = uColor(x.creator_name);
   const isOwn = x.creator_name === S.user.name;
   const action = isOwn
-    ? `<button id="mdel" style="font-size:13px;color:#DC2626;background:none;border:none;cursor:pointer">Retirer cette sortie</button>`
+    ? `<div style="display:flex;gap:12px;align-items:center">
+         <button id="medit" style="font-size:13px;color:#0F766E;background:none;border:none;cursor:pointer">Modifier</button>
+         <button id="mdel" style="font-size:13px;color:#DC2626;background:none;border:none;cursor:pointer">Retirer</button>
+       </div>`
     : x.creator_phone
       ? `<div style="display:flex;gap:8px">
            <button id="mwa" style="background:#25D366;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;font-weight:500">WhatsApp</button>
@@ -227,14 +230,14 @@ export function vForm() {
     <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;z-index:100">
       <div style="width:100%;max-width:480px;background:#fff;border-radius:16px 16px 0 0;max-height:92vh;display:flex;flex-direction:column">
         <div style="padding:1.25rem 1.5rem 1rem;border-bottom:1px solid #F3F4F6;flex-shrink:0;display:flex;justify-content:space-between;align-items:center">
-          <h2 style="font-size:18px;font-weight:600;color:#111">Planifier une sortie</h2>
+          <h2 style="font-size:18px;font-weight:600;color:#111">${S.editRun ? "Modifier la sortie" : "Planifier une sortie"}</h2>
           <button id="fclose" style="background:none;border:none;font-size:24px;cursor:pointer;color:#6B7280;line-height:1;padding:0">×</button>
         </div>
         <div style="padding:1.25rem 1.5rem;overflow-y:auto;flex:1">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
             <div>
               <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Date</label>
-              <input id="fdate" type="date" min="${minDate}" value="${f.date}"/>
+              <input id="fdate" type="date" ${S.editRun ? "" : `min="${minDate}"`} value="${f.date}"/>
             </div>
             <div>
               <label style="font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:500">Heure</label>
@@ -294,7 +297,7 @@ export function vForm() {
           </div>
         </div>
         <div style="padding:1rem 1.5rem;border-top:1px solid #F3F4F6;flex-shrink:0">
-          <button id="fadd" class="btn" ${ok ? "" : "disabled"}>Ajouter à l'agenda</button>
+          <button id="fadd" class="btn" ${ok ? "" : "disabled"}>${S.editRun ? "Enregistrer" : "Ajouter à l'agenda"}</button>
         </div>
       </div>
     </div>
