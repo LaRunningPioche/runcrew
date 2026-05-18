@@ -13,6 +13,7 @@ export const S = {
   form: { date: "", time: "", location: "", distance: "", duration: "", elevation: "", run_type: "", terrain: "", flexible: false, desc: "" },
   modal: null,
   showForm: false,
+  editRun: null,
   joinSelected: null,
   authMode: "signin",
 };

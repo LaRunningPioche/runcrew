@@ -255,7 +255,27 @@ function bindMain() {
   });
 
   document.getElementById("addbtn")?.addEventListener("click", () => { S.showForm = true; r(); });
-  document.getElementById("fclose")?.addEventListener("click", () => { S.showForm = false; r(); });
+  document.getElementById("fclose")?.addEventListener("click", () => { S.showForm = false; S.editRun = null; r(); });
+
+  document.getElementById("medit")?.addEventListener("click", () => {
+    const x = S.modal;
+    S.form = {
+      date: x.date,
+      time: x.time,
+      location: x.location || "",
+      distance: x.distance_km ? String(x.distance_km) : "",
+      duration: x.duration || "",
+      elevation: x.elevation_gain ? String(x.elevation_gain) : "",
+      run_type: x.run_type || "",
+      terrain: x.terrain || "",
+      flexible: x.schedule_flexible || false,
+      desc: x.description || "",
+    };
+    S.editRun = x;
+    S.modal = null;
+    S.showForm = true;
+    r();
+  });
 
   const fdesc = document.getElementById("fdesc");
   if (fdesc) {
@@ -294,40 +314,70 @@ function bindMain() {
       if (!f.date || !f.time || !f.desc) return;
       const btn = document.getElementById("fadd");
       btn.disabled = true;
-      btn.innerHTML = `<span class="spinner"></span>Ajout...`;
-      const { data, error } = await sb.from("runs").insert([{
-        group_id: S.activeGroup.id,
-        creator_id: S.user.id,
-        creator_name: S.user.name,
-        creator_phone: S.user.phone || null,
-        date: f.date,
-        time: f.time,
-        location: f.location || null,
-        distance_km: f.distance ? parseFloat(f.distance) : null,
-        duration: f.duration || null,
-        elevation_gain: f.elevation ? parseInt(f.elevation) : null,
-        run_type: f.run_type || null,
-        terrain: f.terrain || null,
-        schedule_flexible: f.flexible,
-        description: f.desc,
-      }]).select().single();
-      if (error) {
-        toast("Erreur.");
-        btn.disabled = false;
-        btn.textContent = "Ajouter à l'agenda";
-        return;
+
+      if (S.editRun) {
+        btn.innerHTML = `<span class="spinner"></span>Enregistrement...`;
+        const patch = {
+          date: f.date,
+          time: f.time,
+          location: f.location || null,
+          distance_km: f.distance ? parseFloat(f.distance) : null,
+          duration: f.duration || null,
+          elevation_gain: f.elevation ? parseInt(f.elevation) : null,
+          run_type: f.run_type || null,
+          terrain: f.terrain || null,
+          schedule_flexible: f.flexible,
+          description: f.desc,
+        };
+        const { error } = await sb.from("runs").update(patch).eq("id", S.editRun.id);
+        if (error) {
+          toast("Erreur.");
+          btn.disabled = false;
+          btn.textContent = "Enregistrer";
+          return;
+        }
+        const idx = S.runs.findIndex(x => x.id === S.editRun.id);
+        if (idx !== -1) S.runs[idx] = { ...S.runs[idx], ...patch };
+        S.editRun = null;
+        S.form = { date: "", time: "", location: "", distance: "", duration: "", elevation: "", run_type: "", terrain: "", flexible: false, desc: "" };
+        S.showForm = false;
+        toast("Sortie modifiée !");
+        r();
+      } else {
+        btn.innerHTML = `<span class="spinner"></span>Ajout...`;
+        const { data, error } = await sb.from("runs").insert([{
+          group_id: S.activeGroup.id,
+          creator_id: S.user.id,
+          creator_name: S.user.name,
+          creator_phone: S.user.phone || null,
+          date: f.date,
+          time: f.time,
+          location: f.location || null,
+          distance_km: f.distance ? parseFloat(f.distance) : null,
+          duration: f.duration || null,
+          elevation_gain: f.elevation ? parseInt(f.elevation) : null,
+          run_type: f.run_type || null,
+          terrain: f.terrain || null,
+          schedule_flexible: f.flexible,
+          description: f.desc,
+        }]).select().single();
+        if (error) {
+          toast("Erreur.");
+          btn.disabled = false;
+          btn.textContent = "Ajouter à l'agenda";
+          return;
+        }
+        S.runs.push(data);
+        S.form = { date: "", time: "", location: "", distance: "", duration: "", elevation: "", run_type: "", terrain: "", flexible: false, desc: "" };
+        S.showForm = false;
+        S.tab = "week";
+        toast("Sortie ajoutée !");
+        r();
+        navigator.sendBeacon(
+          `${SURL}/functions/v1/notify-run-created`,
+          new Blob([JSON.stringify({ run: data, groupName: S.activeGroup.name })], { type: "application/json" })
+        );
       }
-      S.runs.push(data);
-      S.form = { date: "", time: "", location: "", distance: "", duration: "", elevation: "", run_type: "", terrain: "", flexible: false, desc: "" };
-      S.showForm = false;
-      S.tab = "week";
-      toast("Sortie ajoutée !");
-      r();
-      // Notifie les membres (sendBeacon ne se fait jamais couper par le navigateur)
-      navigator.sendBeacon(
-        `${SURL}/functions/v1/notify-run-created`,
-        new Blob([JSON.stringify({ run: data, groupName: S.activeGroup.name })], { type: "application/json" })
-      );
     });
   }
 
