@@ -224,19 +224,31 @@ function bindMain() {
     r();
   }));
 
-  document.getElementById("moverlay")?.addEventListener("click", e => { if (e.target.id === "moverlay") { S.modal = null; r(); } });
-  document.getElementById("mclose")?.addEventListener("click", () => { S.modal = null; r(); });
+  document.getElementById("moverlay")?.addEventListener("click", e => { if (e.target.id === "moverlay") { S.modal = null; S.confirmDelete = false; r(); } });
+  document.getElementById("mclose")?.addEventListener("click", () => { S.modal = null; S.confirmDelete = false; r(); });
   document.getElementById("mparticipate")?.addEventListener("click", async () => {
     const { data, error } = await sb.from("run_participations").insert([{ run_id: S.modal.id, user_id: S.user.id, user_name: S.user.name }]).select().single();
-    if (!error) { S.participations.push(data); r(); }
+    if (!error) {
+      S.participations.push(data);
+      const btn = document.getElementById("mparticipate");
+      if (btn) {
+        btn.style.background = "#059669";
+        btn.style.borderColor = "#059669";
+        btn.textContent = "✓ Inscrit !";
+        setTimeout(() => r(), 700);
+      } else { r(); }
+    }
   });
   document.getElementById("munparticipate")?.addEventListener("click", async () => {
     const { error } = await sb.from("run_participations").delete().eq("run_id", S.modal.id).eq("user_id", S.user.id);
     if (!error) { S.participations = S.participations.filter(p => !(p.run_id === S.modal.id && p.user_id === S.user.id)); r(); }
   });
-  document.getElementById("mdel")?.addEventListener("click", async () => {
+  document.getElementById("mdel")?.addEventListener("click", () => { S.confirmDelete = true; r(); });
+  document.getElementById("mdelcancel")?.addEventListener("click", () => { S.confirmDelete = false; r(); });
+  document.getElementById("mdelconfirm")?.addEventListener("click", async () => {
     const id = S.modal.id;
     S.modal = null;
+    S.confirmDelete = false;
     await sb.from("runs").delete().eq("id", id);
     S.runs = S.runs.filter(x => x.id !== id);
     toast("Sortie retirée.");
@@ -399,4 +411,12 @@ function bindMain() {
     toast("Membre retiré.");
     r();
   }));
+
+  let touchStartX = 0;
+  document.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener("touchend", e => {
+    if (S.tab !== "week" || S.appTab !== "agenda" || S.modal || S.showForm) return;
+    const delta = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(delta) > 60) { S.weekOffset += delta < 0 ? 1 : -1; r(); }
+  });
 }
