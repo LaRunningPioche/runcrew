@@ -224,19 +224,31 @@ function bindMain() {
     r();
   }));
 
-  document.getElementById("moverlay")?.addEventListener("click", e => { if (e.target.id === "moverlay") { S.modal = null; r(); } });
-  document.getElementById("mclose")?.addEventListener("click", () => { S.modal = null; r(); });
+  document.getElementById("moverlay")?.addEventListener("click", e => { if (e.target.id === "moverlay") { S.modal = null; S.confirmDelete = false; r(); } });
+  document.getElementById("mclose")?.addEventListener("click", () => { S.modal = null; S.confirmDelete = false; r(); });
   document.getElementById("mparticipate")?.addEventListener("click", async () => {
     const { data, error } = await sb.from("run_participations").insert([{ run_id: S.modal.id, user_id: S.user.id, user_name: S.user.name }]).select().single();
-    if (!error) { S.participations.push(data); r(); }
+    if (!error) {
+      S.participations.push(data);
+      const btn = document.getElementById("mparticipate");
+      if (btn) {
+        btn.style.background = "#059669";
+        btn.style.borderColor = "#059669";
+        btn.textContent = "✓ Inscrit !";
+        setTimeout(() => r(), 700);
+      } else { r(); }
+    }
   });
   document.getElementById("munparticipate")?.addEventListener("click", async () => {
     const { error } = await sb.from("run_participations").delete().eq("run_id", S.modal.id).eq("user_id", S.user.id);
     if (!error) { S.participations = S.participations.filter(p => !(p.run_id === S.modal.id && p.user_id === S.user.id)); r(); }
   });
-  document.getElementById("mdel")?.addEventListener("click", async () => {
+  document.getElementById("mdel")?.addEventListener("click", () => { S.confirmDelete = true; r(); });
+  document.getElementById("mdelcancel")?.addEventListener("click", () => { S.confirmDelete = false; r(); });
+  document.getElementById("mdelconfirm")?.addEventListener("click", async () => {
     const id = S.modal.id;
     S.modal = null;
+    S.confirmDelete = false;
     await sb.from("runs").delete().eq("id", id);
     S.runs = S.runs.filter(x => x.id !== id);
     toast("Sortie retirée.");
@@ -255,7 +267,30 @@ function bindMain() {
   });
 
   document.getElementById("addbtn")?.addEventListener("click", () => { S.showForm = true; r(); });
-  document.getElementById("fclose")?.addEventListener("click", () => { S.showForm = false; r(); });
+  document.getElementById("addbtn-empty")?.addEventListener("click", () => { S.showForm = true; r(); });
+  document.getElementById("fclose")?.addEventListener("click", () => { S.showForm = false; S.editRun = null; S.showFormExtras = false; r(); });
+  document.getElementById("ftoggle-extras")?.addEventListener("click", () => { S.showFormExtras = !S.showFormExtras; r(); });
+  document.querySelectorAll("[data-filter]").forEach(b => b.addEventListener("click", () => { S.runFilter = b.dataset.filter; r(); }));
+
+  document.getElementById("medit")?.addEventListener("click", () => {
+    const x = S.modal;
+    S.form = {
+      date: x.date,
+      time: x.time,
+      location: x.location || "",
+      distance: x.distance_km ? String(x.distance_km) : "",
+      duration: x.duration || "",
+      elevation: x.elevation_gain ? String(x.elevation_gain) : "",
+      run_type: x.run_type || "",
+      terrain: x.terrain || "",
+      flexible: x.schedule_flexible || false,
+      desc: x.description || "",
+    };
+    S.editRun = x;
+    S.modal = null;
+    S.showForm = true;
+    r();
+  });
 
   const fdesc = document.getElementById("fdesc");
   if (fdesc) {
@@ -294,40 +329,70 @@ function bindMain() {
       if (!f.date || !f.time || !f.desc) return;
       const btn = document.getElementById("fadd");
       btn.disabled = true;
-      btn.innerHTML = `<span class="spinner"></span>Ajout...`;
-      const { data, error } = await sb.from("runs").insert([{
-        group_id: S.activeGroup.id,
-        creator_id: S.user.id,
-        creator_name: S.user.name,
-        creator_phone: S.user.phone || null,
-        date: f.date,
-        time: f.time,
-        location: f.location || null,
-        distance_km: f.distance ? parseFloat(f.distance) : null,
-        duration: f.duration || null,
-        elevation_gain: f.elevation ? parseInt(f.elevation) : null,
-        run_type: f.run_type || null,
-        terrain: f.terrain || null,
-        schedule_flexible: f.flexible,
-        description: f.desc,
-      }]).select().single();
-      if (error) {
-        toast("Erreur.");
-        btn.disabled = false;
-        btn.textContent = "Ajouter à l'agenda";
-        return;
+
+      if (S.editRun) {
+        btn.innerHTML = `<span class="spinner"></span>Enregistrement...`;
+        const patch = {
+          date: f.date,
+          time: f.time,
+          location: f.location || null,
+          distance_km: f.distance ? parseFloat(f.distance) : null,
+          duration: f.duration || null,
+          elevation_gain: f.elevation ? parseInt(f.elevation) : null,
+          run_type: f.run_type || null,
+          terrain: f.terrain || null,
+          schedule_flexible: f.flexible,
+          description: f.desc,
+        };
+        const { error } = await sb.from("runs").update(patch).eq("id", S.editRun.id);
+        if (error) {
+          toast("Erreur.");
+          btn.disabled = false;
+          btn.textContent = "Enregistrer";
+          return;
+        }
+        const idx = S.runs.findIndex(x => x.id === S.editRun.id);
+        if (idx !== -1) S.runs[idx] = { ...S.runs[idx], ...patch };
+        S.editRun = null;
+        S.form = { date: "", time: "", location: "", distance: "", duration: "", elevation: "", run_type: "", terrain: "", flexible: false, desc: "" };
+        S.showForm = false;
+        toast("Sortie modifiée !");
+        r();
+      } else {
+        btn.innerHTML = `<span class="spinner"></span>Ajout...`;
+        const { data, error } = await sb.from("runs").insert([{
+          group_id: S.activeGroup.id,
+          creator_id: S.user.id,
+          creator_name: S.user.name,
+          creator_phone: S.user.phone || null,
+          date: f.date,
+          time: f.time,
+          location: f.location || null,
+          distance_km: f.distance ? parseFloat(f.distance) : null,
+          duration: f.duration || null,
+          elevation_gain: f.elevation ? parseInt(f.elevation) : null,
+          run_type: f.run_type || null,
+          terrain: f.terrain || null,
+          schedule_flexible: f.flexible,
+          description: f.desc,
+        }]).select().single();
+        if (error) {
+          toast("Erreur.");
+          btn.disabled = false;
+          btn.textContent = "Ajouter à l'agenda";
+          return;
+        }
+        S.runs.push(data);
+        S.form = { date: "", time: "", location: "", distance: "", duration: "", elevation: "", run_type: "", terrain: "", flexible: false, desc: "" };
+        S.showForm = false;
+        S.tab = "week";
+        toast("Sortie ajoutée !");
+        r();
+        navigator.sendBeacon(
+          `${SURL}/functions/v1/notify-run-created`,
+          new Blob([JSON.stringify({ run: data, groupName: S.activeGroup.name })], { type: "application/json" })
+        );
       }
-      S.runs.push(data);
-      S.form = { date: "", time: "", location: "", distance: "", duration: "", elevation: "", run_type: "", terrain: "", flexible: false, desc: "" };
-      S.showForm = false;
-      S.tab = "week";
-      toast("Sortie ajoutée !");
-      r();
-      // Notifie les membres (sendBeacon ne se fait jamais couper par le navigateur)
-      navigator.sendBeacon(
-        `${SURL}/functions/v1/notify-run-created`,
-        new Blob([JSON.stringify({ run: data, groupName: S.activeGroup.name })], { type: "application/json" })
-      );
     });
   }
 
@@ -349,4 +414,12 @@ function bindMain() {
     toast("Membre retiré.");
     r();
   }));
+
+  let touchStartX = 0;
+  document.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener("touchend", e => {
+    if (S.tab !== "week" || S.appTab !== "agenda" || S.modal || S.showForm) return;
+    const delta = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(delta) > 60) { S.weekOffset += delta < 0 ? 1 : -1; r(); }
+  });
 }
