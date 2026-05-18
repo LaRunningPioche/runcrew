@@ -189,16 +189,10 @@ export function vModal() {
   const c = uColor(x.creator_name);
   const isOwn = x.creator_name === S.user.name;
   const action = isOwn
-    ? S.confirmDelete
-      ? `<div style="display:flex;gap:8px;align-items:center">
-           <span style="font-size:13px;color:#374151;font-weight:500">Supprimer ?</span>
-           <button id="mdelconfirm" style="font-size:13px;color:white;background:#DC2626;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-family:inherit;font-weight:500">Oui</button>
-           <button id="mdelcancel" style="font-size:13px;color:#6B7280;background:#F3F4F6;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-family:inherit">Annuler</button>
-         </div>`
-      : `<div style="display:flex;gap:12px;align-items:center">
-           <button id="medit" style="font-size:13px;color:#0F766E;background:none;border:none;cursor:pointer">Modifier</button>
-           <button id="mdel" style="font-size:13px;color:#DC2626;background:none;border:none;cursor:pointer">Retirer</button>
-         </div>`
+    ? `<div style="display:flex;gap:12px;align-items:center">
+         <button id="medit" style="font-size:13px;color:#0F766E;background:none;border:none;cursor:pointer">Modifier</button>
+         <button id="mdel" style="font-size:13px;color:#DC2626;background:none;border:none;cursor:pointer">Retirer</button>
+       </div>`
     : x.creator_phone
       ? `<div style="display:flex;gap:8px">
            <button id="mwa" style="background:#25D366;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;font-weight:500">WhatsApp</button>

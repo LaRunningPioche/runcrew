@@ -267,10 +267,7 @@ function bindMain() {
   });
 
   document.getElementById("addbtn")?.addEventListener("click", () => { S.showForm = true; r(); });
-  document.getElementById("addbtn-empty")?.addEventListener("click", () => { S.showForm = true; r(); });
-  document.getElementById("fclose")?.addEventListener("click", () => { S.showForm = false; S.editRun = null; S.showFormExtras = false; r(); });
-  document.getElementById("ftoggle-extras")?.addEventListener("click", () => { S.showFormExtras = !S.showFormExtras; r(); });
-  document.querySelectorAll("[data-filter]").forEach(b => b.addEventListener("click", () => { S.runFilter = b.dataset.filter; r(); }));
+  document.getElementById("fclose")?.addEventListener("click", () => { S.showForm = false; S.editRun = null; r(); });
 
   document.getElementById("medit")?.addEventListener("click", () => {
     const x = S.modal;

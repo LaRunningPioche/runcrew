@@ -14,9 +14,6 @@ export const S = {
   modal: null,
   showForm: false,
   editRun: null,
-  confirmDelete: false,
-  runFilter: "upcoming",
-  showFormExtras: false,
   joinSelected: null,
   authMode: "signin",
 };
